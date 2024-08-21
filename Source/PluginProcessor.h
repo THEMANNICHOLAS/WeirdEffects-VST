@@ -10,10 +10,11 @@
 
 #include <JuceHeader.h>
 
+
 //==============================================================================
 /**
 */
-class WeirdEffectsAudioProcessor  : public juce::AudioProcessor
+class WeirdEffectsAudioProcessor : public juce::AudioProcessor
 {
 public:
     //==============================================================================
@@ -21,14 +22,17 @@ public:
     ~WeirdEffectsAudioProcessor() override;
 
     //==============================================================================
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void prepareToPlay(double sampleRate, int samplesPerBlock) override;
+    //Use this method as place to do pre-playblack and initalization
+
     void releaseResources() override;
 
-   #ifndef JucePlugin_PreferredChannelConfigurations
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-   #endif
+#ifndef JucePlugin_PreferredChannelConfigurations
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+#endif
 
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    //Do not interrupt this process block as it can result in pops/bangs etc.
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -45,13 +49,23 @@ public:
     //==============================================================================
     int getNumPrograms() override;
     int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const juce::String getProgramName (int index) override;
-    void changeProgramName (int index, const juce::String& newName) override;
+    void setCurrentProgram(int index) override;
+    const juce::String getProgramName(int index) override;
+    void changeProgramName(int index, const juce::String& newName) override;
 
     //==============================================================================
-    void getStateInformation (juce::MemoryBlock& destData) override;
-    void setStateInformation (const void* data, int sizeInBytes) override;
+    void getStateInformation(juce::MemoryBlock& destData) override;
+    void setStateInformation(const void* data, int sizeInBytes) override;
+
+
+    //User declared below...
+
+    float audioOut;
+
+    //Creates a Value tree used to attatch parameters to sliders/knobs and with extra properties.
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    juce::AudioProcessorValueTreeState valueTree{*this, nullptr ,"Parameters", createParameterLayout() };
+
 
 private:
     //==============================================================================

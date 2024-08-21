@@ -9,6 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+
 //==============================================================================
 WeirdEffectsAudioProcessor::WeirdEffectsAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -131,10 +132,10 @@ bool WeirdEffectsAudioProcessor::isBusesLayoutSupported (const BusesLayout& layo
 
 void WeirdEffectsAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    //This Code handles the Audio Buffer
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
-
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
     // guaranteed to be empty - they may contain garbage).
@@ -156,6 +157,8 @@ void WeirdEffectsAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
         // ..do something to the data...
     }
+
+
 }
 
 //==============================================================================
@@ -164,9 +167,10 @@ bool WeirdEffectsAudioProcessor::hasEditor() const
     return true; // (change this to false if you choose to not supply an editor)
 }
 
-juce::AudioProcessorEditor* WeirdEffectsAudioProcessor::createEditor()
+juce::AudioProcessorEditor * WeirdEffectsAudioProcessor::createEditor()
 {
-    return new WeirdEffectsAudioProcessorEditor (*this);
+
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -182,6 +186,51 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
 }
+
+ juce::AudioProcessorValueTreeState::ParameterLayout WeirdEffectsAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    
+    //Creates Audio Parameter for volume. -32 is 32 decibles quieter, 0 is default, +6 is 6 more decibels.
+    layout.add(std::make_unique<juce::AudioParameterFloat>
+        (juce::ParameterID("Gain"),
+         juce::String("Gain"), 
+         juce::NormalisableRange<float>(-32.f, 6.f, .5f, 1.f), 0.f));
+
+    //Creates Audio Parameter for dry/wet of entire effect. 0 being 0%, 100 being 100%, 50 being 50%, the default
+    
+    layout.add(std::make_unique<juce::AudioParameterFloat>
+        (juce::ParameterID("Dry/Wet"),
+         juce::String("Dry/Wet"), 
+         juce::NormalisableRange<float>(0.f, 100.f, 1.f, 1.f), 50.f));
+    
+
+    //Creates Audio Parameter for controlling amount of reverb.
+    
+    layout.add(std::make_unique<juce::AudioParameterFloat>
+        (juce::ParameterID("Reverb"),
+         juce::String("Reverb"),
+         juce::NormalisableRange<float>(0.f, 100.f, 1.f, 1.f), 0.f));
+         
+
+    //Creates LowCut frequency parameter for cutting the low end
+    layout.add(std::make_unique<juce::AudioParameterFloat>
+        (juce::ParameterID("LowCut Freq"),
+         juce::String("LowCut Freq"),
+         juce::NormalisableRange<float>(20.f, 20000.f,1.f, 1.f), 20.f));
+
+    //Creates HighCut frequency parameter for cutting out high end
+    layout.add(std::make_unique<juce::AudioParameterFloat>
+        (juce::ParameterID("HighCut Freq"),
+         juce::String("HighCut Freq"),
+         juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20000.f));
+
+   
+
+    return layout;
+    
+}
+
 
 //==============================================================================
 // This creates new instances of the plugin..

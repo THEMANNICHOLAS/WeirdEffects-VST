@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="HJne8L" name="WeirdEffects" projectType="audioplug" useAppConfig="0"
-              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginAUMainType="'aufx'">
   <MAINGROUP id="QdNfQX" name="WeirdEffects">
     <GROUP id="{AF1EEFC8-2997-2E36-0556-8E761789559B}" name="Source">
       <FILE id="zSlqkz" name="PluginProcessor.cpp" compile="1" resource="0"
