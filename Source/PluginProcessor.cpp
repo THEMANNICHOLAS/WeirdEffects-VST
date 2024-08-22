@@ -94,8 +94,19 @@ void WeirdEffectsAudioProcessor::changeProgramName (int index, const juce::Strin
 //==============================================================================
 void WeirdEffectsAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
+    // Use this method as the place to do any pre-playback 
     // initialisation that you need..
+
+    //Prepares ProcessChains using prepare(), must be done before playing
+    juce::dsp::ProcessSpec spec; 
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = 1;
+    spec.sampleRate = sampleRate;
+
+    leftChain.prepare(spec);
+    rightChain.prepare(spec);
+
+
 }
 
 void WeirdEffectsAudioProcessor::releaseResources()
@@ -145,20 +156,22 @@ void WeirdEffectsAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    
+    //Processor Chains require a dsp::ProcessContext to run audio through links in chains
+    //ProcessContext requires dsp::AudioBlock
+    //AudioBlock requires dsp::AudioBuffer
+    juce::dsp::AudioBlock<float> block(buffer);
 
-        // ..do something to the data...
-    }
+    //Creates audio blocks for each channel for stereo
+    auto leftBlock = block.getSingleChannelBlock(0);
+    auto rightBlock = block.getSingleChannelBlock(1);
 
+    //Use ProcessContextReplacing instead of NonReplacing because it handles one channel each, left and right
+    juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+    juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
 
+    leftChain.process(leftContext);
+    rightChain.process(rightContext);
 }
 
 //==============================================================================
@@ -198,7 +211,6 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
          juce::NormalisableRange<float>(-32.f, 6.f, .5f, 1.f), 0.f));
 
     //Creates Audio Parameter for dry/wet of entire effect. 0 being 0%, 100 being 100%, 50 being 50%, the default
-    
     layout.add(std::make_unique<juce::AudioParameterFloat>
         (juce::ParameterID("Dry/Wet"),
          juce::String("Dry/Wet"), 
@@ -206,7 +218,6 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
     
 
     //Creates Audio Parameter for controlling amount of reverb.
-    
     layout.add(std::make_unique<juce::AudioParameterFloat>
         (juce::ParameterID("Reverb"),
          juce::String("Reverb"),
@@ -226,7 +237,7 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
          juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20000.f));
 
    
-
+     
     return layout;
     
 }
