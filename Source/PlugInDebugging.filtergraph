@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <FILTERGRAPH>
-  <FILTER uid="1" x="0.5" y="0.1" useARA="0">
+  <FILTER uid="1" x="0.5839598997493735" y="0.1173184357541899" useARA="0">
     <PLUGIN name="Audio Input" descriptiveName="" format="Internal" category="I/O devices"
             manufacturer="JUCE" version="1.0" file="" uniqueId="246006c0"
             isInstrument="0" fileTime="0" infoUpdateTime="0" numInputs="0"
@@ -12,7 +12,7 @@
         <BUS index="0" layout="disabled"/>
       </INPUTS>
       <OUTPUTS>
-        <BUS index="0" layout="L R"/>
+        <BUS index="0" layout="disabled"/>
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
@@ -34,7 +34,7 @@
   <FILTER uid="3" x="0.5" y="0.9" useARA="0">
     <PLUGIN name="Audio Output" descriptiveName="" format="Internal" category="I/O devices"
             manufacturer="JUCE" version="1.0" file="" uniqueId="724248cb"
-            isInstrument="0" fileTime="0" infoUpdateTime="0" numInputs="2"
+            isInstrument="0" fileTime="0" infoUpdateTime="0" numInputs="0"
             numOutputs="0" isShell="0" hasARAExtension="0" uid="724248cb"/>
     <STATE>0.</STATE>
     <LAYOUT>
@@ -61,11 +61,11 @@
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
-  <FILTER uid="5" x="0.355" y="0.4536290322580645" useARA="0" uiLastX_Normal="1040"
-          uiLastY_Normal="153" uiopen_Normal="1">
+  <FILTER uid="5" x="0.3408521303258145" y="0.505586592178771" useARA="0"
+          uiLastX_Normal="1040" uiLastY_Normal="153" uiopen_Normal="0">
     <PLUGIN name="WeirdEffects" format="VST3" category="Fx" manufacturer="yourcompany"
             version="1.0.0" file="C:\Program Files\Common Files\VST3\WeirdEffects.vst3"
-            uniqueId="f59ee01a" isInstrument="0" fileTime="1916a98fe02" infoUpdateTime="1916feda0c8"
+            uniqueId="f59ee01a" isInstrument="0" fileTime="1916a98fe02" infoUpdateTime="1917a63d13e"
             numInputs="2" numOutputs="2" isShell="0" hasARAExtension="0"
             uid="e954cf5e"/>
     <STATE>191.VMjLgXK....O+fWarAhckI2bo8la8HRLt.iHfTlai8FYo41Y8HRUTYTK3HxO9.BOVMEUy.Ea0cVZtMEcgQWY9vSRC8Vav8lak4Fc9XCLt3hKt3hKt3hKt3hYRUUSTEETIckVwTjQisVTTgkdEYjKAQjYPQSPWgUdMcjKAQjct3hdA4hKt3hKt3hKtnTUv.UQAslXuk0UXoWUFE0YQcEV77RRC8Vav8lak4Fc9vyKVMEUy.Ea0cVZtMEcgQWY9..</STATE>
@@ -78,8 +78,22 @@
       </OUTPUTS>
     </LAYOUT>
   </FILTER>
-  <CONNECTION srcFilter="1" srcChannel="0" dstFilter="5" dstChannel="0"/>
-  <CONNECTION srcFilter="1" srcChannel="1" dstFilter="5" dstChannel="1"/>
+  <FILTER uid="6" x="0.399749373433584" y="0.2653631284916201" useARA="0"
+          uiLastX_Normal="875" uiLastY_Normal="231" uiopen_Normal="0">
+    <PLUGIN name="SamplerPlugin" format="Internal" category="Synth" manufacturer="JUCE"
+            version="1.0.0" file="SamplerPlugin" uniqueId="2a34a53b" isInstrument="1"
+            fileTime="0" infoUpdateTime="0" numInputs="0" numOutputs="2"
+            isShell="0" hasARAExtension="0" uid="2a34a53b"/>
+    <STATE>0.</STATE>
+    <LAYOUT>
+      <INPUTS/>
+      <OUTPUTS>
+        <BUS index="0" layout="L R"/>
+      </OUTPUTS>
+    </LAYOUT>
+  </FILTER>
   <CONNECTION srcFilter="5" srcChannel="0" dstFilter="3" dstChannel="0"/>
   <CONNECTION srcFilter="5" srcChannel="1" dstFilter="3" dstChannel="1"/>
+  <CONNECTION srcFilter="6" srcChannel="0" dstFilter="5" dstChannel="0"/>
+  <CONNECTION srcFilter="6" srcChannel="1" dstFilter="5" dstChannel="1"/>
 </FILTERGRAPH>
