@@ -60,7 +60,7 @@ public:
 
     //User declared below...
 
-    float audioOut;
+
 
     //Creates a Value tree used to attatch parameters to sliders/knobs and with extra properties.
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -68,6 +68,17 @@ public:
 
 
 private:
+    using Filter = juce::dsp::IIR::Filter<float>;
+
+    using Reverb = juce::dsp::Reverb;
+
+    using MonoChain = juce::dsp::ProcessorChain<Filter, Reverb>;
+
+    //Creates a stereo chain using MonoChain, right and left
+    MonoChain leftChain, rightChain;
+
+
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WeirdEffectsAudioProcessor)
 };
