@@ -106,6 +106,24 @@ void WeirdEffectsAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     leftChain.prepare(spec);
     rightChain.prepare(spec);
 
+    auto chainSettings = getChainSettings(valueTree);
+
+    //IIR::Coefficients are reference-counted wrappers with a juce::Array that allocate on the heap.
+    //From what I understand, it works similar to a smart pointer. From what I see online, allocating
+    //on the heap is no good, but I have no choice.
+    
+    auto lowCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 20.f, .8f);
+    auto highCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 19000.f, .8f);
+
+    //auto gainCoefficient = juce::dsp::DryWetMixer<float>::DryWetMixer(samplesPerBlock);
+    //auto reverbCoefficient = juce::dsp::Reverb::
+
+    leftChain.get<ChainPosition::LowCut>().coefficients = lowCutCoefficients;
+    rightChain.get<ChainPosition::LowCut>().coefficients = lowCutCoefficients;
+    leftChain.get<ChainPosition::HighCut>().coefficients = highCutCoefficients;
+    rightChain.get<ChainPosition::HighCut>().coefficients = highCutCoefficients;
+
+    
 
 }
 
@@ -157,6 +175,18 @@ void WeirdEffectsAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.clear (i, 0, buffer.getNumSamples());
 
     
+    auto chainSettings = getChainSettings(valueTree);
+    auto lowCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass(getSampleRate(), 20.f, .8f);
+    auto highCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(getSampleRate(), 20000.f, .8f);
+
+    leftChain.get<ChainPosition::LowCut>().coefficients = lowCutCoefficients;
+    rightChain.get<ChainPosition::LowCut>().coefficients = lowCutCoefficients;
+    leftChain.get<ChainPosition::HighCut>().coefficients = highCutCoefficients;
+    rightChain.get<ChainPosition::HighCut>().coefficients = highCutCoefficients;
+    
+
+
+
     //Processor Chains require a dsp::ProcessContext to run audio through links in chains
     //ProcessContext requires dsp::AudioBlock
     //AudioBlock requires dsp::AudioBuffer
@@ -236,11 +266,25 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
          juce::String("HighCut Freq"),
          juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20000.f));
 
-   
      
     return layout;
     
 }
+
+ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& tree) {
+
+     ChainSettings settings;
+
+     //Use getRawParameterValue instead of getParameterValue because we don't want
+     //normalized value.
+     settings.gain = tree.getRawParameterValue("Gain")->load();
+     settings.dryWet = tree.getRawParameterValue("Dry/Wet")->load();
+     settings.reverb = tree.getRawParameterValue("Reverb")->load();
+     settings.lowCutFreq = tree.getRawParameterValue("LowCut Freq")->load();
+     settings.highCutFreq = tree.getRawParameterValue("HighCut Freq")->load();
+     
+     return settings;
+ }
 
 
 //==============================================================================
