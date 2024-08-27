@@ -10,6 +10,14 @@
 
 #include <JuceHeader.h>
 
+//Struct for storing current parameter values
+struct ChainSettings {
+    float highCutFreq{ 0 }, lowCutFreq{ 0 };
+    float gain{ 0 }, dryWet{ 0 };
+    float reverb{ 0 };
+};
+ChainSettings getChainSettings(juce::AudioProcessorValueTreeState & Tree);
+
 
 //==============================================================================
 /**
