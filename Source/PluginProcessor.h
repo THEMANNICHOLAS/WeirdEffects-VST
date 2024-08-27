@@ -76,14 +76,25 @@ public:
 
 
 private:
+
     using Filter = juce::dsp::IIR::Filter<float>;
-
-    using Reverb = juce::dsp::Reverb;
-
-    using MonoChain = juce::dsp::ProcessorChain<Filter, Reverb>;
+    using GainProcessor = juce::dsp::Gain<float>;
+    //using DryWetProcessor = juce::abst
+    using ReverbProcessor = juce::dsp::Reverb;
+    //Don't forget to include DryWetProcessor into the chain after GainProcessor
+    using MonoChain = juce::dsp::ProcessorChain<Filter, Filter, GainProcessor, ReverbProcessor>;
 
     //Creates a stereo chain using MonoChain, right and left
     MonoChain leftChain, rightChain;
+
+    enum ChainPosition {
+        LowCut,
+        HighCut,
+        Gain,
+        DryWet,
+        Reverb,
+    };
+
 
 
 
