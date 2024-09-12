@@ -10,6 +10,35 @@
 
 #include <JuceHeader.h>
 
+//Struct for storing current parameter values
+struct ChainSettings {
+    float highCutFreq{ 0 }, lowCutFreq{ 0 };
+    Slope highCutSlope{Slope::Slope_12dB}, lowCutSlope{Slope::Slope_12dB};
+    float gain{ 0 }, dryWet{ 0 };
+    float reverb{ 0 };
+};
+ChainSettings getChainSettings(juce::AudioProcessorValueTreeState & Tree);
+
+enum ChainPosition {
+    LowCut,
+    HighCut,
+    CutFilter,
+    Gain,
+    DryWet,
+    Reverb,
+};
+enum Slope {
+    Slope_12dB,
+    Slope_24dB,
+    Slope_36dB,
+};
+
+using Filter = juce::dsp::IIR::Filter<float>;
+using GainProcessor = juce::dsp::Gain<float>;
+using ReverbProcessor = juce::dsp::Reverb;
+using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter>;
+//Don't forget to include DryWetProcessor into the chain after GainProcessor
+using MonoChain = juce::dsp::ProcessorChain<CutFilter, CutFilter, GainProcessor, ReverbProcessor>;
 
 //==============================================================================
 /**
@@ -58,16 +87,27 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
 
-    //User declared below...
+   
 
-    float audioOut;
+
 
     //Creates a Value tree used to attatch parameters to sliders/knobs and with extra properties.
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+        ;
     juce::AudioProcessorValueTreeState valueTree{*this, nullptr ,"Parameters", createParameterLayout() };
 
+    void setFilterCoefficients(CutFilter& filter, juce::dsp::IIR::Coefficients<float>::Ptr& coefficients, Slope slope);
 
+    void setBypassLeftRightFilter(CutFilter& leftFilter,CutFilter& rightFilter, bool boolValue);
 private:
+    
+
+    //Creates a stereo chain using MonoChain, right and left
+    MonoChain leftChain, rightChain;
+
+
+
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WeirdEffectsAudioProcessor)
 };

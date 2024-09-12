@@ -94,8 +94,57 @@ void WeirdEffectsAudioProcessor::changeProgramName (int index, const juce::Strin
 //==============================================================================
 void WeirdEffectsAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
+    // Use this method as the place to do any pre-playback 
     // initialisation that you need..
+
+    //Prepares ProcessChains using prepare(), must be done before playing
+    juce::dsp::ProcessSpec spec; 
+    spec.maximumBlockSize = samplesPerBlock;
+    spec.numChannels = 1;
+    spec.sampleRate = sampleRate;
+
+    leftChain.prepare(spec);
+    rightChain.prepare(spec);
+
+    auto chainSettings = getChainSettings(valueTree);
+
+    //IIR::Coefficients are reference-counted wrappers with a juce::Array that allocate on the heap.
+    //From what I understand, it works similar to a smart pointer. From what I see online, allocating
+    //on the heap is no good, but I have no choice.
+    
+    auto lowCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 20.f, .8f);
+    auto highCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(sampleRate, 19000.f, .8f);
+
+    //auto gainCoefficient = juce::dsp::DryWetMixer<float>::DryWetMixer(samplesPerBlock);
+    //auto reverbCoefficient = juce::dsp::Reverb::
+
+    /*
+    *leftChain.get<ChainPosition::LowCut>().coefficients = *lowCutCoefficients;
+    *rightChain.get<ChainPosition::LowCut>().coefficients = *lowCutCoefficients;
+    *leftChain.get<ChainPosition::HighCut>().coefficients = *highCutCoefficients;
+    *rightChain.get<ChainPosition::HighCut>().coefficients = *highCutCoefficients;
+    * */
+
+    /*
+ for (int i = 0; i < order / 2; ++i)
+     {
+         auto Q = 1.0 / (2.0 * std::cos ((2.0 * i + 1.0) * MathConstants<double>::pi / (order * 2.0)));
+         arrayFilters.add (*IIR::Coefficients<FloatType>::makeHighPass (sampleRate, frequency,
+                                                                        static_cast<FloatType> (Q)));
+     }
+     This is the algorithm used to calculate how many Coefficient objects we create based on order.
+     So, if we want 3 different slope choices, we need order of 6 becuase 6/2=3
+ */
+    auto cutCoefficients = juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod
+    (chainSettings.lowCutFreq, getSampleRate(), 2*(chainSettings.lowCutSlope + 1));
+
+    auto& leftLowCut = leftChain.get<ChainPosition::LowCut>();
+    auto& rightLowCut = rightChain.get<ChainPosition::LowCut>();
+
+    setBypassLeftRightFilter(leftLowCut, rightLowCut, true);
+    setFilterCoefficients(leftLowCut, cutCoefficients[0], chainSettings.lowCutSlope);
+
+
 }
 
 void WeirdEffectsAudioProcessor::releaseResources()
@@ -145,20 +194,51 @@ void WeirdEffectsAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    //Processor Chains require a dsp::ProcessContext to run audio through links in chains
+//ProcessContext requires dsp::AudioBlock
+//AudioBlock requires dsp::AudioBuffer
+    juce::dsp::AudioBlock<float> block(buffer);
 
-        // ..do something to the data...
-    }
+    //Creates audio blocks for each channel for stereo
+    auto leftBlock = block.getSingleChannelBlock(0);
+    auto rightBlock = block.getSingleChannelBlock(1);
 
+    //Use ProcessContextReplacing instead of NonReplacing because it handles one channel each, left and right
+    juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+    juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
 
+    leftChain.process(leftContext);
+    rightChain.process(rightContext);
+
+    
+    auto chainSettings = getChainSettings(valueTree);
+    auto lowCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass(getSampleRate(), 20.f, .8f);
+    auto highCutCoefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(getSampleRate(), 20000.f, .8f);
+    /*
+    *leftChain.get<ChainPosition::LowCut>().coefficients = *lowCutCoefficients;
+    *rightChain.get<ChainPosition::LowCut>().coefficients = *lowCutCoefficients;
+    *leftChain.get<ChainPosition::HighCut>().coefficients = *highCutCoefficients;
+    *rightChain.get<ChainPosition::HighCut>().coefficients = *highCutCoefficients;
+     */
+
+    //Processor Chains require a dsp::ProcessContext to run audio through links in chains
+//ProcessContext requires dsp::AudioBlock
+//AudioBlock requires dsp::AudioBuffer
+    juce::dsp::AudioBlock<float> block(buffer);
+
+    //Creates audio blocks for each channel for stereo
+    auto leftBlock = block.getSingleChannelBlock(0);
+    auto rightBlock = block.getSingleChannelBlock(1);
+
+    //Use ProcessContextReplacing instead of NonReplacing because it handles one channel each, left and right
+    juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+    juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
+
+    leftChain.process(leftContext);
+    rightChain.process(rightContext);
+
+    
+   
 }
 
 //==============================================================================
@@ -198,7 +278,6 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
          juce::NormalisableRange<float>(-32.f, 6.f, .5f, 1.f), 0.f));
 
     //Creates Audio Parameter for dry/wet of entire effect. 0 being 0%, 100 being 100%, 50 being 50%, the default
-    
     layout.add(std::make_unique<juce::AudioParameterFloat>
         (juce::ParameterID("Dry/Wet"),
          juce::String("Dry/Wet"), 
@@ -206,7 +285,6 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
     
 
     //Creates Audio Parameter for controlling amount of reverb.
-    
     layout.add(std::make_unique<juce::AudioParameterFloat>
         (juce::ParameterID("Reverb"),
          juce::String("Reverb"),
@@ -225,12 +303,74 @@ void WeirdEffectsAudioProcessor::setStateInformation (const void* data, int size
          juce::String("HighCut Freq"),
          juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20000.f));
 
-   
+    //Creates a selection of different slope steepness for the EQ cut-off. Range from 12db-36db
+    juce::StringArray dbOctSlopeArr;
+    for (int i = 0; i < 3; ++i) {
+        juce::String dbOctave;
+        dbOctave << (12 + i * 12);
+        dbOctave << "db/Oct";
+        dbOctSlopeArr.add(dbOctave);
+    }
+
+    //Creates a parameter choice dropdown with the different db options
+    layout.add(std::make_unique<juce::AudioParameterChoice>
+        ("Low-Cut Slope", "Low-Cut Slope", dbOctSlopeArr, 0));
+    layout.add(std::make_unique<juce::AudioParameterChoice>
+        ("High-Cut Slope", "High-Cut Slope", dbOctSlopeArr, 0));
 
     return layout;
     
 }
 
+ ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& tree) {
+
+     ChainSettings settings;
+
+     //Use getRawParameterValue instead of getParameterValue because we don't want
+     //normalized value.
+     settings.gain = tree.getRawParameterValue("Gain")->load();
+     settings.dryWet = tree.getRawParameterValue("Dry/Wet")->load();
+     settings.reverb = tree.getRawParameterValue("Reverb")->load();
+     settings.lowCutFreq = tree.getRawParameterValue("LowCut Freq")->load();
+     settings.highCutFreq = tree.getRawParameterValue("HighCut Freq")->load();
+     settings.lowCutSlope = static_cast<Slope>(tree.getRawParameterValue("Low-Cut Slope")->load());
+     settings.lowCutSlope = static_cast<Slope>(tree.getRawParameterValue("High-Cut Slope")->load());
+
+     return settings;
+ }
+
+ void WeirdEffectsAudioProcessor::setFilterCoefficients(CutFilter& filter, juce::dsp::IIR::Coefficients<float>::Ptr& coefficients, Slope slope) {
+     switch (slope) {
+     case Slope::Slope_12dB:
+         *filter.get<0>().coefficients = *coefficients;
+         break;
+     case Slope::Slope_24dB:
+         *filter.get<0>().coefficients = *coefficients;
+         *filter.get<1>().coefficients = *coefficients;
+         break;
+     case Slope::Slope_36dB:
+         *filter.get<0>().coefficients = *coefficients;
+         *filter.get<0>().coefficients = *coefficients;
+         *filter.get<3>().coefficients = *coefficients;
+         break;
+     default:
+         jassertfalse;
+         break;
+     }
+     //Must dereference to modify actualy filter passed by reference because they are smart pointers
+     
+ 
+ }
+
+ void WeirdEffectsAudioProcessor::setBypassLeftRightFilter(CutFilter& leftFilter, CutFilter& rightFilter, bool boolValue){
+     leftFilter.setBypassed<0>(boolValue);
+     leftFilter.setBypassed<1>(boolValue);
+     leftFilter.setBypassed<2>(boolValue);
+
+     rightFilter.setBypassed<0>(boolValue);
+     rightFilter.setBypassed<1>(boolValue);
+     rightFilter.setBypassed<2>(boolValue);
+ }
 
 //==============================================================================
 // This creates new instances of the plugin..
